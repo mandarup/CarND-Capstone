@@ -44,8 +44,9 @@ class WaypointLoader(object):
         waypoints = []
         with open(fname) as wfile:
             reader = csv.DictReader(wfile, CSV_HEADER)
-            for wp in reader:
+            for i, wp in enumerate(reader):
                 p = Waypoint()
+                p.pose.header.seq = i
                 p.pose.pose.position.x = float(wp['x'])
                 p.pose.pose.position.y = float(wp['y'])
                 p.pose.pose.position.z = float(wp['z'])
