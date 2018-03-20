@@ -28,8 +28,8 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb) # Provides the Vehicles Current Position
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb) # Provides a complete list of waypoints the car will be following
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
