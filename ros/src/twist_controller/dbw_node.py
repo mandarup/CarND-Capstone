@@ -94,7 +94,7 @@ class DBWNode(object):
                                                                 #self.current_velocity.twist.linear.x,
                                                                 self.dbw_enabled)
             if self.dbw_enabled:
-              self.publish(throttle, brake, steer)
+                self.publish(throttle, brake, steer)
 
             rate.sleep()
 
