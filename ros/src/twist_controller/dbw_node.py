@@ -89,12 +89,15 @@ class DBWNode(object):
             # if <dbw is enabled>:
             #   self.publish(throttle, brake, steer)
 
-            throttle, brake, steering = self.controller.control(#self.twist_cmd.twist.linear.x,
-                                                                #self.twist_cmd.twist.angular.z,
-                                                                #self.current_velocity.twist.linear.x,
-                                                                self.dbw_enabled)
-            if self.dbw_enabled:
-                self.publish(throttle, brake, steer)
+            if (self.twist_cmd is not None
+                    and self.current_velocity is not None
+                    and self.dbw_enabled is not None):
+                throttle, brake, steering = self.controller.control(self.twist_cmd.twist.linear.x,
+                                                                    self.twist_cmd.twist.angular.z,
+                                                                    self.current_velocity.twist.linear.x,
+                                                                    self.dbw_enabled)
+                if self.dbw_enabled:
+                    self.publish(throttle, brake, steer)
 
             rate.sleep()
 
