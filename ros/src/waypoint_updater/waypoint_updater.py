@@ -30,9 +30,9 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/velocity', Lane, self.velocity_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -40,6 +40,7 @@ class WaypointUpdater(object):
 
         self.current_pose = None
         self.all_waypoints = None
+        self.velocity = {'vel': None, 'theta_dot': None}
 
         self.loop()
 
@@ -47,7 +48,7 @@ class WaypointUpdater(object):
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
         while not rospy.is_shutdown():
-            if self.current_pose is not None and self.all_waypoints is not None:
+            if self.current_pose is not None and self.all_waypoints is not None and None not in self.velocity.values():
                 quat = self.current_pose.pose.orientation
                 quat_array = [quat.x, quat.y, quat.z, quat.w]
                 theta = tf.transformations.euler_from_quaternion(quat_array)[2]
@@ -68,9 +69,16 @@ class WaypointUpdater(object):
                 final_lane = Lane()
                 final_lane.header.frame_id = '/world'
                 final_lane.header.stamp = rospy.Time().now()
-                final_lane.waypoints = orig_waypoints[:LOOKAHEAD_WPS]
+                final_waypoints = orig_waypoints[:LOOKAHEAD_WPS]
 
-                # TODO: add setting velocity of waypoints
+                # Set velocity in normal conditions
+                [self.set_waypoint_velocity(final_waypoints, i, self.velocity['vel'])
+                 for i in range(len(final_waypoints))]
+
+                final_lane.waypoints = final_waypoints
+
+
+                # TODO: add incorporation of traffic lights
 
                 self.final_waypoints_pub.publish(final_lane)
             rate.sleep()
@@ -79,6 +87,9 @@ class WaypointUpdater(object):
     def pose_cb(self, msg):
         self.current_pose = msg
 
+    def velocity_cb(self, msg):
+        self.velocity['vel'] = msg.twist.linear.x
+        self.velocity['theta_dot'] = msg.twist.angular.z
 
     def waypoints_cb(self, lane):
         final_lane = Lane()
