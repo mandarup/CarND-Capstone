@@ -5,6 +5,7 @@ from std_msgs.msg import Bool
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
 from geometry_msgs.msg import TwistStamped
 import math
+import csv
 
 from twist_controller import Controller
 
@@ -31,9 +32,11 @@ that we have created in the `__init__` function.
 
 '''
 
+WRITE_CSV_LOG = True
+
 class DBWNode(object):
     def __init__(self):
-        rospy.init_node('dbw_node')
+        rospy.init_node('dbw_node') #, log_level=rospy.DEBUG)
 
         vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
         fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
@@ -59,7 +62,7 @@ class DBWNode(object):
         # TODO: Subscribe to all the topics you need to
 
         rospy.Subscriber('/twist_cmd', TwistStamped, self.proposed_cb) # Made up of a Header (with a time stamp, and frame_id), and Twist (linear and angular velocity vectors)
-        rospy.Subscriber('/current_velocity', TwistStamped, self.current_cb) 
+        rospy.Subscriber('/current_velocity', TwistStamped, self.current_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb) # Simulator Publishes wheter or not the drive by wire is enabled (only publish if it is)
 
 
@@ -69,30 +72,64 @@ class DBWNode(object):
 
         self.current_linear_vel = 0.
         self.current_anuglar_vel = 0.
-        # self.current_time = 0.
+
+        # obtain current time from /twist_cmd.header.nsecs (or secs)
+        # the time stamp in /current_velocity is empty
+        self._time_nsecs = None
 
         self.dbw_enabled = False
 
+        if WRITE_CSV_LOG:
+            # NOTE: this file is created at  /home/<user>/.ros/log/
+            self._logfile = open("log.csv", "w")
+            fieldnames =[ "time_nsecs",
+                          "current_linear_vel",
+                          "proposed_angular_vel",
+                         "proposed_linear_vel",
+                         "throttle", "brake", "steering"]
+            
+            self._logwriter = csv.DictWriter(self._logfile,
+                                             fieldnames=fieldnames)
+            self._logwriter.writeheader()
 
 
         self.loop()
 
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
+
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
 
-            if self.proposed_linear_vel != None and self.proposed_angular_vel != None and self.current_linear_vel != None:
-                 
+            if (self.proposed_linear_vel != None
+                    and self.proposed_angular_vel != None
+                    and self.current_linear_vel != None):
 
-                throttle, brake, steering = self.controller.control(self.proposed_linear_vel,
-                                                                    self.proposed_angular_vel,
-                                                                    self.current_linear_vel,
-                                                                    self.dbw_enabled)
+                throttle, brake, steering = self.controller.control(
+                    self.proposed_linear_vel,
+                    self.proposed_angular_vel,
+                    self.current_linear_vel,
+                    self.dbw_enabled)
+
                 if self.dbw_enabled:
-                  self.publish(throttle, brake, steering)
+                    self.publish(throttle, brake, steering)
+                    if WRITE_CSV_LOG:
+                        self._logwriter.writerow(
+                            {"time_nsecs": self._time_nsecs,
+                            "current_linear_vel":self.current_linear_vel,
+                            "proposed_linear_vel":self.proposed_linear_vel,
+                            "proposed_angular_vel":self.proposed_angular_vel,
+                            "throttle": throttle,
+                            "brake": brake,
+                            "steering": steering})
+
             rate.sleep()
+
+        if WRITE_CSV_LOG:
+            self._logfile.close()
+
+
 
     def publish(self, throttle, brake, steer):
         tcmd = ThrottleCmd()
@@ -117,6 +154,8 @@ class DBWNode(object):
         self.proposed_linear_vel = msg.twist.linear.x
         self.proposed_angular_vel = msg.twist.angular.z
         # self.proposed_time = msg.header.stamp
+        self._time_nsecs = msg.header.stamp.nsecs
+
 
     def current_cb(self, msg):
         self.current_linear_vel = msg.twist.linear.x
@@ -125,6 +164,7 @@ class DBWNode(object):
 
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data
+
 
 if __name__ == '__main__':
     DBWNode()
