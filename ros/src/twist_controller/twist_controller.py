@@ -107,6 +107,7 @@ class Controller(object):
 
         # steering = self.filter.filt(steering)
 
+        # NOTE: This is incorrect, steering pid needs error as input
         steering = self.steering_pid.step(steering, time_diff)
 
         if not dbw_enabled:
