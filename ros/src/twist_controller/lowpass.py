@@ -1,5 +1,8 @@
 
 class LowPassFilter(object):
+
+    # Notes cutoff frequency is 1/2pi*tau
+    # Higher the timeconstant, the lower the cutoff freq
     def __init__(self, tau, ts):
         self.a = 1. / (tau / ts + 1.)
         self.b = tau / ts / (tau / ts + 1.);

@@ -22,8 +22,8 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
 
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb) # Provides the Vehicles Current Position
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb) # Provides a complete list of waypoints the car will be following
 
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
