@@ -50,9 +50,9 @@ class WaypointUpdater(object):
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
         while not rospy.is_shutdown():
-            rospy.logdebug("current_pose: {}".format(self.current_pose is not None))
-            rospy.logdebug("base_waypoints: {}".format(self.base_waypoints is not None))
-            rospy.logdebug("waypoint_tree: {}".format(self.waypoint_tree is not None))
+            # rospy.logdebug("current_pose: {}".format(self.current_pose is not None))
+            # rospy.logdebug("base_waypoints: {}".format(self.base_waypoints is not None))
+            # rospy.logdebug("waypoint_tree: {}".format(self.waypoint_tree is not None))
             if self.current_pose is not None and self.base_waypoints is not None and self.waypoint_tree is not None:
                 #get closest waypoint
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
