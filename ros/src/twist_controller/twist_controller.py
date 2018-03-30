@@ -83,7 +83,6 @@ class Controller(object):
             # Torque is force * distance from point of rotation
             brake = force_req * self.wheel_radius
         elif accel > 0.:
-
             # Notes - Throttle is in the Range of 0 to 1 (1 means fully engaged)
             # should do ( (Max_Vel - curr_vel)/Max_vel)
             # max_vel = current_linear_vel + max accel* time_diff
@@ -114,4 +113,11 @@ class Controller(object):
             self.steering_pid.reset()
 
         # Return throttle, brake, steer
+
+        #throttle = 1.
+        #steering = -1.
+
         return throttle, brake, steering
+
+
+
