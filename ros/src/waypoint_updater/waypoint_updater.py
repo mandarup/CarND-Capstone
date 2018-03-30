@@ -27,6 +27,31 @@ import math
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
+MAX_DECEL = 1. # max. allowed deceleration
+
+### Deceleration profile functions:
+
+# Proposal by Udacity-walkthrough for deceleration profile:
+def deceleration_sqrt(dist):
+    x = 2 * MAX_DECEL * dist
+    vel = math.sqrt(x)
+    return vel
+
+# Further scaling of profile will be necessary later (still untested, 30/03/2018)
+def deceleration_sigmoid(dist):
+    x = dist
+    vel = 1/(1+math.exp(-x))
+    return vel
+
+# Further scaling of profile will be necessary later (still untested 30/03/2018)
+def deceleration_atan(dist):
+    x = dist - 10.
+    vel = math.atan(x) + 0.5 * math.pi
+    return vel
+
+
+
+
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -81,39 +106,36 @@ class WaypointUpdater(object):
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
         return closest_idx
 
-    # Proposed function from Udacity walkthrough:    
     def publish_waypoints(self, closest_idx):
-        final_lane = self.generate_lane()
-        self.final_waypoints_pub.publish(final_lane)
-
-
-    # Proposed function from Udacity walkthrough:
-    def generate_lane(self):
         lane = Lane()
-
+        lane.header = self.base_waypoints.header
+        
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
 
-        #base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
-        base_waypoints = self.waypoints_2d[closest_idx:farthest_idx]
+        lane.waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
 
-        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
-            lane.waypoints = base_waypoints
-        else:
-            lane.waypoints = self.decelerate(base_waypoints, closest_idx)
+        # Impose deceleration profile onto waypoints if traffic light is detected 
+        # and within range (i.e. nearer than farthest_idx)
+        if self.stopline_wp_idx != -1 and (self.stopline_wp_idx < farthest_idx):
+            lane.waypoints = self.decelerate(self.base_waypoints.waypoints[closest_idx:farthest_idx], closest_idx)
 
-        return lane
+        self.final_waypoints_pub.publish(lane)
 
-    # Proposed function from Udacity walkthrough:
+    # Imposes deceleration profile if traffic light or object is detected on trajectory
     def decelerate(self, waypoints, closest_idx):
         temp = []
         for i, wp in enumerate(waypoints):
             p = Waypoint()
             p.pose = wp.pose
 
+            # Deceleration profile is a sqrt function
             stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
             dist = self.distance(waypoints, i, stop_idx)
-            vel = math.sqrt(2 * MAX_DECEL * dist)
+            vel = deceleration_sqrt(dist)
+            # Alternative profile functions (try out later):
+            # vel = deceleration_sigmoid(dist)
+            # vel = deceleration_atan(dist)
 
             if vel < 1.:
                 vel = 0.

@@ -62,7 +62,7 @@ class WaypointLoader(object):
         x, y, z = p1.x - p2.x, p1.y - p2.y, p1.z - p2.z
         return math.sqrt(x*x + y*y + z*z)
 
-    # mlippl 03/30/2018: moved function to module 'waypoint_updater'
+    # mlippl 03/30/2018: Moved function to module 'waypoint_updater'
     """
     def decelerate(self, waypoints):
         last = waypoints[-1]
