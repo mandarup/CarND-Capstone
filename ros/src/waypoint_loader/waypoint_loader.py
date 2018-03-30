@@ -55,12 +55,15 @@ class WaypointLoader(object):
                 p.twist.twist.linear.x = float(self.velocity)
 
                 waypoints.append(p)
-        return self.decelerate(waypoints)
+        return waypoints
+        #return self.decelerate(waypoints)
 
     def distance(self, p1, p2):
         x, y, z = p1.x - p2.x, p1.y - p2.y, p1.z - p2.z
         return math.sqrt(x*x + y*y + z*z)
 
+    # mlippl 03/30/2018: Moved function to module 'waypoint_updater'
+    """
     def decelerate(self, waypoints):
         last = waypoints[-1]
         last.twist.twist.linear.x = 0.
@@ -71,6 +74,7 @@ class WaypointLoader(object):
                 vel = 0.
             wp.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
         return waypoints
+    """
 
     def publish(self, waypoints):
         lane = Lane()
