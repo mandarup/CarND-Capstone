@@ -90,11 +90,11 @@ class Controller(object):
             # vel_diff = min (vel_diff, self.accel_limit*time_diff)
 
             # vel_diff = self.filter.filt(vel_diff)
-            accel = vel_diff / time_diff
+            # accel = vel_diff / time_diff
 
-            accel = self.filter.filt(accel)
+            # accel = self.filter.filt(accel)
 
-            throttle = self.throttle_pid.step(accel, time_diff)
+            throttle = self.throttle_pid.step(vel_diff, time_diff)
 
             if not dbw_enabled:
                 self.throttle_pid.reset()
@@ -107,7 +107,7 @@ class Controller(object):
         # steering = self.filter.filt(steering)
 
         # NOTE: This is incorrect, steering pid needs error as input
-        steering = self.steering_pid.step(steering, time_diff)
+        # steering = self.steering_pid.step(steering, time_diff)
 
         if not dbw_enabled:
             self.steering_pid.reset()
