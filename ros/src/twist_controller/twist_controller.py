@@ -8,7 +8,7 @@ from lowpass import LowPassFilter
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
-throttle_KP = 1
+throttle_KP = 0.3
 throttle_KI = 0.1
 throttle_KD = 0.0
 
@@ -27,6 +27,8 @@ class Controller(object):
         self.accel_limit = accel_limit
         self.decel_limit = decel_limit
 
+        self.last_time = rospy.get_time()
+
         self.yaw_controller = YawController(
             wheel_base,
             steer_ratio,
@@ -38,17 +40,22 @@ class Controller(object):
             throttle_KI,
             throttle_KD,
             mn=0.0,
-            mx=1.0)
-        self.steering_pid = PID(
-            steering_KP,
-            steering_KI,
-            steering_KD,
-            mn=-max_steer_angle,
-            mx=max_steer_angle)
-        self.filter = LowPassFilter(0.2, 0.1)
+            mx=0.2)
+        # self.steering_pid = PID(
+        #     steering_KP,
+        #     steering_KI,
+        #     steering_KD,
+        #     mn=-max_steer_angle,
+        #     mx=max_steer_angle)
+        self.filter = LowPassFilter(0.5, 0.02) # cutoff frequency is 1/2pi*tau. used to eliminate noise from velocity
 
     def control(self, proposed_linear_velocity,
                 proposed_angular_velocity, current_linear_vel, dbw_enabled):
+
+        if not dbw_enabled:
+            self.throttle_pid.reset()
+            # self.steering_pid.reset()
+            return 0., 0., 0.
 
         # USE Yaw Controller to convert (and Low pass filter) to control
         # implement Controller to control velocity
@@ -58,7 +65,7 @@ class Controller(object):
 
         # proposed_linear_velocity = self.filter.filt(proposed_linear_velocity)
         # proposed_angular_velocity = self.filter.filt(proposed_angular_velocity)
-        # current_linear_vel = self.filter.filt(current_linear_vel)
+        current_linear_vel = self.filter.filt(current_linear_vel)
 
         throttle = brake = steering = 0.
 
@@ -69,54 +76,34 @@ class Controller(object):
 
         vel_diff = proposed_linear_velocity - current_linear_vel  # also the error
 
-        time_diff = 1. / 50.  # 50Hz total
+        current_time = rospy.get_time()
+        sample_time = current_time - self.last_time
+        self.last_time = current_time
 
-        accel = vel_diff / time_diff
 
-        if accel < 0.:
-            # we are decelerating
-            if accel < self.decel_limit:
-                accel = self.decel_limit
-
-            # Force required for deceleration
-            force_req = abs(accel) * self.vehicle_mass
-            # Torque is force * distance from point of rotation
-            brake = force_req * self.wheel_radius
-        elif accel > 0.:
-            # Notes - Throttle is in the Range of 0 to 1 (1 means fully engaged)
-            # should do ( (Max_Vel - curr_vel)/Max_vel)
-            # max_vel = current_linear_vel + max accel* time_diff
-
-            # vel_diff = min (vel_diff, self.accel_limit*time_diff)
-
-            # vel_diff = self.filter.filt(vel_diff)
-            # accel = vel_diff / time_diff
-
-            # accel = self.filter.filt(accel)
-
-            throttle = self.throttle_pid.step(vel_diff, time_diff)
-
-            if not dbw_enabled:
-                self.throttle_pid.reset()
+        throttle = self.throttle_pid.step(vel_diff, sample_time)
 
         steering = self.yaw_controller.get_steering(
             proposed_linear_velocity,
             proposed_angular_velocity,
             current_linear_vel)
 
-        # steering = self.filter.filt(steering)
+        # stop the vehicle
+        if proposed_linear_velocity == 0. and current_linear_vel < 0.1:
+            throttle = 0
+            brake = 400 # N*m
 
-        # NOTE: This is incorrect, steering pid needs error as input
-        # steering = self.steering_pid.step(steering, time_diff)
+        elif throttle < 0.1 and vel_diff < 0:
+            throttle = 0
+            # we are decelerating
+            decel = max(vel_diff, self.decel_limit)
+            # Force required for deceleration
+            force_req = abs(decel) * self.vehicle_mass
+            # Torque is force * distance from point of rotation
+            brake = force_req * self.wheel_radius
 
-        if not dbw_enabled:
-            self.steering_pid.reset()
 
         # Return throttle, brake, steer
-
-        #throttle = 1.
-        #steering = -1.
-
         return throttle, brake, steering
 
 
