@@ -18,6 +18,7 @@ TODO:
 import rospy
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
+from std_msgs.msg import Int32
 import tf
 from scipy.spatial import KDTree
 import numpy as np
@@ -59,6 +60,7 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb) # Provides the Vehicles Current Position
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb) # Provides a complete list of waypoints the car will be following
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb) # Get the position of the closest waypoint to a Red Light Stop
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
         self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
@@ -110,15 +112,17 @@ class WaypointUpdater(object):
         lane = Lane()
         lane.header = self.base_waypoints.header
         
-        closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
 
         lane.waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
 
         # Impose deceleration profile onto waypoints if traffic light is detected 
         # and within range (i.e. nearer than farthest_idx)
+
+
+
         if self.stopline_wp_idx != -1 and (self.stopline_wp_idx < farthest_idx):
-            lane.waypoints = self.decelerate(self.base_waypoints.waypoints[closest_idx:farthest_idx], closest_idx)
+            lane.waypoints = self.decelerate(lane.waypoints, closest_idx)
 
         self.final_waypoints_pub.publish(lane)
 
@@ -130,7 +134,7 @@ class WaypointUpdater(object):
             p.pose = wp.pose
 
             # Deceleration profile is a sqrt function
-            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0) # Center of the car will be beind the line rather than right on
             dist = self.distance(waypoints, i, stop_idx)
             vel = deceleration_sqrt(dist)
             # Alternative profile functions (try out later):
@@ -149,10 +153,6 @@ class WaypointUpdater(object):
     def pose_cb(self, msg):
         self.current_pose = msg
 
-    def velocity_cb(self, msg):
-        self.velocity['vel'] = msg.twist.linear.x
-        self.velocity['theta_dot'] = msg.twist.angular.z
-
     def waypoints_cb(self, msg):
         self.base_waypoints = msg
         if not self.waypoints_2d:
@@ -162,7 +162,8 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        self.stopline_wp_idx = msg.data;
+        # pass
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
