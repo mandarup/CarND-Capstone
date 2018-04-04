@@ -31,6 +31,22 @@ RUN apt-get install -y netbase
 # Tmux
 RUN apt-get install -y tmux
 
+RUN apt-get install -y protobuf-compiler python-setuptools python-dev build-essential python-pip
+
+# Download object detection models
+RUN cd /opt && \
+     git clone https://github.com/tensorflow/models tensorflow_models
+
+# Install coco
+RUN git clone https://github.com/cocodataset/cocoapi.git && \
+   cd cocoapi/PythonAPI && \
+   make && \
+   mkdir -p /usr/local/lib/python2.7/dist-packages/tensorflow/models/research && \
+   cp -r pycocotools /opt/tensorflow_models/research && \
+   cd /opt/tensorflow_models/research && \
+   protoc object_detection/protos/*.proto --python_out=. && \
+   echo "export PYTHONPATH=$PYTHONPATH:/opt/tensorflow_models/research:/opt/tensorflow_models/research/slim" >> ~/.bashrc
+
 
 RUN mkdir /capstone
 VOLUME ["/capstone"]
