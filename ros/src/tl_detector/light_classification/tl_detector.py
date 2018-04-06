@@ -1,11 +1,8 @@
 import logging
 import sys
-
+import rospy
 import numpy as np
 import tensorflow as tf
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 
 # This is needed since the notebook is stored in the object_detection folder.
 sys.path.append("/opt/tensorflow_models/research/")
@@ -16,31 +13,28 @@ if tf.__version__ < '1.4.0':
     raise ImportError(
         'Please upgrade your tensorflow installation to v1.4.* or later!')
 
-# What model do we want to use
-MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_lowproposals_coco_2018_01_28'
-
-# Path to frozen detection graph. This is the actual model that is used
-# for the object detection.
-PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
-
-# List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = '/opt/tensorflow_models/research/object_detection/data/mscoco_label_map.pbtxt'
-
 NUM_CLASSES = 90
 
 
 class TLDetector(object):
     def __init__(self):
+        rospy.init_node('TLDetector', log_level=rospy.DEBUG)
+
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
 
+        model_path = rospy.get_param('~od_path')
+        path_to_ckpt = model_path + '/frozen_inference_graph.pb'
+
+        rospy.log('Attempt to load frozen model: ' + path_to_ckpt)
         # Load the actual model into the graph
         with self.graph.as_default():
             od_graph_def = tf.GraphDef()
-            with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+            with tf.gfile.GFile(path_to_ckpt, 'rb') as fid:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
+                rospy.log('At end of TLDetector loader')
 
     def run_inference_for_single_image(self, image):
         # Get handles to input and output tensors
