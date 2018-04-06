@@ -245,7 +245,7 @@ bool PurePursuit::verifyFollowing() const
   }
   else
   {
-    // ROS_INFO("Following : False");
+    ROS_INFO("Following : False");
     return false;
   }
 }
