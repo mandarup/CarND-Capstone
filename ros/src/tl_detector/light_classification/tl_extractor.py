@@ -17,8 +17,6 @@ NUM_CLASSES = 90
 
 class TLExtractor(object):
     def __init__(self):
-        #rospy.init_node('tl_extract', log_level=rospy.DEBUG)
-
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
 
@@ -36,7 +34,7 @@ class TLExtractor(object):
                 rospy.loginfo('At end of TLDetector loader')
 
 
-    def run_inference_for_single_image(self, image):
+    def _run_inference_for_single_image(self, image):
         # Get handles to input and output tensors
         ops = self.graph.get_operations()
         all_tensor_names = {output.name for op in ops for output in op.outputs}
@@ -92,7 +90,7 @@ class TLExtractor(object):
         :return:
         """
         # Actual detection.
-        output_dict = self.run_inference_for_single_image(src_image[..., ::-1])
+        output_dict = self._run_inference_for_single_image(src_image[..., ::-1])
         detected_tl_boxes = output_dict['detection_boxes'][
             output_dict['detection_classes'] == 10]
 
