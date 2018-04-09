@@ -1,4 +1,3 @@
-import logging
 import sys
 import rospy
 import numpy as np
@@ -16,9 +15,9 @@ if tf.__version__ < '1.4.0':
 NUM_CLASSES = 90
 
 
-class TLDetector(object):
+class TLExtractor(object):
     def __init__(self):
-        rospy.init_node('TLDetector', log_level=rospy.DEBUG)
+        #rospy.init_node('tl_extract', log_level=rospy.DEBUG)
 
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
@@ -26,7 +25,7 @@ class TLDetector(object):
         model_path = rospy.get_param('~od_path')
         path_to_ckpt = model_path + '/frozen_inference_graph.pb'
 
-        rospy.log('Attempt to load frozen model: ' + path_to_ckpt)
+        rospy.loginfo('Attempt to load frozen model: ' + path_to_ckpt)
         # Load the actual model into the graph
         with self.graph.as_default():
             od_graph_def = tf.GraphDef()
@@ -34,7 +33,8 @@ class TLDetector(object):
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-                rospy.log('At end of TLDetector loader')
+                rospy.loginfo('At end of TLDetector loader')
+
 
     def run_inference_for_single_image(self, image):
         # Get handles to input and output tensors
