@@ -121,8 +121,9 @@ class TLDetector(object):
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         start = time.time()
         lights = self.tl_extractor.extract_traffic_light(cv_image)
-        lights_col = [self.tl_classifier.get_classification(img) for img in lights]
-        rospy.loginfo('found lights: {} in {}'.format(lights_col, time.time() - start))
+        if len(lights) > 0:
+            lights_col = [self.tl_classifier.get_classification(img) for img in lights]
+            rospy.loginfo('found lights: {} in {}'.format(lights_col, time.time() - start))
 
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
