@@ -122,6 +122,8 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         start = time.time()
+        IMG_HEIGHT = cv_image.shape[1] // 3
+        IMG_WIDTH = cv_image.shape[0] // 3
         cv_image = cv2.resize(cv_image, (IMG_HEIGHT, IMG_WIDTH), interpolation=cv2.INTER_CUBIC)
         self.state_count += 1
         lights = self.tl_extractor.extract_traffic_light(cv_image)
