@@ -21,7 +21,7 @@ class TLExtractor(object):
         self.sess = tf.Session(graph=self.graph)
 
         model_path = rospy.get_param('~od_path')
-        path_to_ckpt = model_path + '/frozen_inference_graph.pb'
+        path_to_ckpt = model_path + rospy.get_param('~od_model')
 
         rospy.loginfo('Attempt to load frozen model: ' + path_to_ckpt)
         # Load the actual model into the graph
@@ -31,7 +31,7 @@ class TLExtractor(object):
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-                rospy.loginfo('At end of TLDetector loader')
+                rospy.loginfo('At end of TLExtractor loader')
 
 
     def _run_inference_for_single_image(self, image):
