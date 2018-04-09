@@ -9,6 +9,8 @@ from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 from light_classification.tl_extractor import TLExtractor
 
+import cv2
+
 from scipy.spatial import KDTree
 import tf
 import time
@@ -120,10 +122,14 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         start = time.time()
+        cv_image = cv2.resize(cv_image, (IMG_HEIGHT, IMG_WIDTH), interpolation=cv2.INTER_CUBIC)
+        self.state_count += 1
         lights = self.tl_extractor.extract_traffic_light(cv_image)
         if len(lights) > 0:
             lights_col = [self.tl_classifier.get_classification(img) for img in lights]
             rospy.loginfo('found lights: {} in {}'.format(lights_col, time.time() - start))
+            file_name = '/capstone/imgs/camera/test_{}_{}.jpg'.format(self.state_count, lights_col[0])
+            cv2.imwrite(file_name, lights[0])
 
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
