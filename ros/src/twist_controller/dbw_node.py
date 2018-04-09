@@ -101,12 +101,16 @@ class DBWNode(object):
 
         if WRITE_CSV_LOG:
             # NOTE: this file is created at  /home/<user>/.ros/log/
-            self._logfile = open("log.csv", "w")
+            rospy.loginfo("writing csv log at : {}".format("/home/<user>/.ros/log/log.csv"))
+            self._logfile = open("log/log.csv", "w")
             fieldnames = ["time_nsecs",
                           "current_linear_vel",
                           "proposed_angular_vel",
                           "proposed_linear_vel",
-                          "throttle", "brake", "steering"]
+                          "throttle", "brake", "steering",
+                          "throttle_p",
+                          "throttle_i",
+                          "throttle_d"]
 
             self._logwriter = csv.DictWriter(self._logfile,
                                              fieldnames=fieldnames)
@@ -141,7 +145,10 @@ class DBWNode(object):
                              "proposed_angular_vel": self.proposed_angular_vel,
                              "throttle": throttle,
                              "brake": brake,
-                             "steering": steering})
+                             "steering": steering,
+                             "throttle_p": self.controller.throttle_pid.last_error,
+                             "throttle_i": self.controller.throttle_pid.int_val,
+                             "throttle_d": self.controller.throttle_pid.derivative,})
 
             rate.sleep()
 
