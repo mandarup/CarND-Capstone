@@ -1,8 +1,16 @@
 from styx_msgs.msg import TrafficLight
+import cv2
+import numpy as np
+
+from .tl_detector import TLDetector
+UNKNOWN = 4
+GREEN = 2
+YELLOW = 1
+RED = 0
+IMG_WIDTH, IMG_HEIGHT = 3 * 20, 20
 
 class TLClassifier(object):
     def __init__(self):
-        #TODO load classifier
         pass
 
     def get_classification(self, image):
@@ -15,5 +23,14 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        #TODO implement light color prediction
-        return TrafficLight.UNKNOWN
+        img = cv2.resize(image, (IMG_HEIGHT, IMG_WIDTH), interpolation=cv2.INTER_CUBIC)
+        highest_mean = 0
+        #TODO use global names instead of local
+        tl_col = UNKNOWN
+        for i, col in enumerate([RED, YELLOW, GREEN]):
+            box_mean = np.mean(img[i * 20: ((i + 1) * 20 - 1), :])
+            if box_mean > highest_mean:
+                highest_mean = box_mean
+                tl_col = col
+
+        return tl_col

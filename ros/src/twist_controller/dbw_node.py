@@ -72,7 +72,7 @@ class DBWNode(object):
             decel_limit,
             wheel_base,
             steer_ratio,
-            0,
+            0.1,
             max_lat_accel,
             max_steer_angle)
 
@@ -86,12 +86,12 @@ class DBWNode(object):
         # publish if it is)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
-        self.proposed_linear_vel = 0.
-        self.proposed_angular_vel = 0.
-        # self.proposed_time = 0.
+        self.proposed_linear_vel = None
+        self.proposed_angular_vel = None
+        # self.proposed_time = None
 
-        self.current_linear_vel = 0.
-        self.current_anuglar_vel = 0.
+        self.current_linear_vel = None
+        self.current_anuglar_vel = None
 
         # obtain current time from /twist_cmd.header.nsecs (or secs)
         # the time stamp in /current_velocity is empty
@@ -174,7 +174,7 @@ class DBWNode(object):
 
     def current_cb(self, msg):
         self.current_linear_vel = msg.twist.linear.x
-        self.current_angular_vel = msg.twist.angular.z
+        # self.current_angular_vel = msg.twist.angular.z
         # self.current_time = msg.header.stamp
 
     def dbw_enabled_cb(self, msg):
