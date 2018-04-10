@@ -46,7 +46,6 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
-
         if self.extract_tl:
             rospy.loginfo('Loading Carla CV traffic light components')
 
@@ -58,8 +57,10 @@ class TLDetector(object):
         else:
             sub6 = rospy.Subscriber('/image_color', Image, self.image_cb_notl)
 
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb) # Provides the Vehicles Current Position
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb) # Provides a complete list of waypoints the car will be following
+        # Provides the Vehicles Current Position
+        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        # Provides a complete list of waypoints the car will be following
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
@@ -70,6 +71,7 @@ class TLDetector(object):
         '''
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
 
+        # TODO: verify whether spin function can get a frequency so that we don't run this too often.
         rospy.spin()
 
     def pose_cb(self, msg):
@@ -122,9 +124,6 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         start = time.time()
-        IMG_HEIGHT = cv_image.shape[1] // 3
-        IMG_WIDTH = cv_image.shape[0] // 3
-        cv_image = cv2.resize(cv_image, (IMG_HEIGHT, IMG_WIDTH), interpolation=cv2.INTER_CUBIC)
         self.state_count += 1
         lights = self.tl_extractor.extract_traffic_light(cv_image)
         if len(lights) > 0:
@@ -132,6 +131,9 @@ class TLDetector(object):
             rospy.loginfo('found lights: {} in {}'.format(lights_col, time.time() - start))
             file_name = '/capstone/imgs/camera/test_{}_{}.jpg'.format(self.state_count, lights_col[0])
             cv2.imwrite(file_name, lights[0])
+        else:
+            file_name = '/capstone/imgs/camera/test_{}_NOLIGHT.jpg'.format(self.state_count)
+            cv2.imwrite(file_name, cv_image)
 
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
