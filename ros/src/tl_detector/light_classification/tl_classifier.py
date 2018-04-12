@@ -1,4 +1,3 @@
-from styx_msgs.msg import TrafficLight
 import cv2
 import numpy as np
 
