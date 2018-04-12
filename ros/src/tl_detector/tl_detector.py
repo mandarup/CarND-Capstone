@@ -9,6 +9,8 @@ from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 from light_classification.tl_extractor import TLExtractor
 
+import cv2
+
 from scipy.spatial import KDTree
 import tf
 import time

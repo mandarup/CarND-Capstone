@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 UNKNOWN = 4
 GREEN = 2
 YELLOW = 1
