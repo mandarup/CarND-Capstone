@@ -1,12 +1,6 @@
-import sys
 import rospy
 import numpy as np
 import tensorflow as tf
-
-# This is needed since the notebook is stored in the object_detection folder.
-sys.path.append("/opt/tensorflow_models/research/")
-sys.path.append("/opt/tensorflow_models/research/slim")
-from object_detection.utils import ops as utils_ops
 
 if tf.__version__ < '1.4.0':
     raise ImportError(
@@ -33,39 +27,19 @@ class TLExtractor(object):
                 tf.import_graph_def(od_graph_def, name='')
                 rospy.loginfo('At end of TLExtractor loader')
 
-
     def _run_inference_for_single_image(self, image):
+        """
+        Uses pre-loaded RCNN to detect bounding boxes of objects in an image
+
+        :param image: expects image in numpy array in RGB format
+        :return:
+        """
         # Get handles to input and output tensors
-        ops = self.graph.get_operations()
-        all_tensor_names = {output.name for op in ops for output in op.outputs}
-        tensor_dict = {}
-        for key in [
-            'num_detections', 'detection_boxes', 'detection_scores',
-            'detection_classes', 'detection_masks'
-        ]:
-            tensor_name = key + ':0'
-            if tensor_name in all_tensor_names:
-                tensor_dict[key] = self.graph.get_tensor_by_name(
-                    tensor_name)
-        if 'detection_masks' in tensor_dict:
-            # The following processing is only for single image
-            detection_boxes = tf.squeeze(tensor_dict['detection_boxes'], [0])
-            detection_masks = tf.squeeze(tensor_dict['detection_masks'], [0])
-            # Reframe is required to translate mask from box coordinates to image
-            # coordinates and fit the image size.
-            real_num_detection = tf.cast(
-                tensor_dict['num_detections'][0], tf.int32)
-            detection_boxes = tf.slice(
-                detection_boxes, [0, 0], [real_num_detection, -1])
-            detection_masks = tf.slice(
-                detection_masks, [0, 0, 0], [real_num_detection, -1, -1])
-            detection_masks_reframed = utils_ops.reframe_box_masks_to_image_masks(
-                detection_masks, detection_boxes, image.shape[0], image.shape[1])
-            detection_masks_reframed = tf.cast(
-                tf.greater(detection_masks_reframed, 0.5), tf.uint8)
-            # Follow the convention by adding back the batch dimension
-            tensor_dict['detection_masks'] = tf.expand_dims(
-                detection_masks_reframed, 0)
+        tensor_dict = dict()
+        tensor_dict['num_detections'] = self.graph.get_tensor_by_name('num_detections:0')
+        tensor_dict['detection_boxes'] = self.graph.get_tensor_by_name('detection_boxes:0')
+        tensor_dict['detection_scores'] = self.graph.get_tensor_by_name('detection_scores:0')
+        tensor_dict['detection_classes'] = self.graph.get_tensor_by_name('detection_classes:0')
         image_tensor = self.graph.get_tensor_by_name('image_tensor:0')
 
         # Run inference
@@ -78,16 +52,14 @@ class TLExtractor(object):
             'detection_classes'][0].astype(np.uint8)
         output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
         output_dict['detection_scores'] = output_dict['detection_scores'][0]
-        if 'detection_masks' in output_dict:
-            output_dict['detection_masks'] = output_dict['detection_masks'][0]
         return output_dict
 
     def extract_traffic_light(self, src_image):
         """
         Image is expected to be in OpenCV BGR format. Results will be returned in BGR format.
 
-        :param src_image:
-        :return:
+        :param src_image: expects image in numpy array in BGR format
+        :return: list with extracted traffic lights or empty list if none were found
         """
         # Actual detection.
         output_dict = self._run_inference_for_single_image(src_image[..., ::-1])
