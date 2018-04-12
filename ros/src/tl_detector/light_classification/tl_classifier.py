@@ -1,8 +1,6 @@
-from styx_msgs.msg import TrafficLight
 import cv2
 import numpy as np
 
-from .tl_detector import TLDetector
 UNKNOWN = 4
 GREEN = 2
 YELLOW = 1
