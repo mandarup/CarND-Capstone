@@ -166,7 +166,8 @@ class TLDetector(object):
 
         """
 
-        # return light.state
+        if not self.extract_tl:
+            return light.state
         # commented out to skip TL classifier. this gets traffic light state from simulator
 
         # if not self.has_image:
