@@ -50,6 +50,9 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+
+
         if self.extract_tl:
             rospy.loginfo('Loading Carla CV traffic light components')
 
@@ -64,7 +67,6 @@ class TLDetector(object):
         # Provides the Vehicles Current Position
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         # Provides a complete list of waypoints the car will be following
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
