@@ -1,11 +1,11 @@
 import cv2
 import numpy as np
+from styx_msgs.msg import TrafficLight
 
-
-UNKNOWN = 4
-GREEN = 2
-YELLOW = 1
-RED = 0
+UNKNOWN = TrafficLight.UNKNOWN
+GREEN = TrafficLight.GREEN
+YELLOW = TrafficLight.YELLOW
+RED = TrafficLight.RED
 IMG_WIDTH, IMG_HEIGHT = 3 * 20, 20
 
 class TLClassifier(object):
