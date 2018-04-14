@@ -19,6 +19,9 @@ import yaml
 
 STATE_COUNT_THRESHOLD = 3
 
+WRITE_IMAGES = True
+
+
 class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
@@ -122,20 +125,22 @@ class TLDetector(object):
         """Identified in msg whether a traffic light can be founad and what color it has
         """
         rospy.loginfo('tl_detector.image_cb_tl')
+        self.has_image = True
+        self.camera_image = msg
+        light_wp, state = self.process_traffic_lights()
 
-        cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
-        start = time.time()
-        cv_image = increase_contrast(cv_image)
-        self.state_count += 1
-        lights = self.tl_extractor.extract_traffic_light(cv_image)
-        if len(lights) > 0:
-            lights_col = [self.tl_classifier.get_classification(img) for img in lights]
-            rospy.loginfo('found lights: {} in {}'.format(lights_col, time.time() - start))
-            file_name = '/capstone/imgs/camera/test_{}_{}.jpg'.format(self.state_count, lights_col[0])
-            cv2.imwrite(file_name, lights[0])
+        if self.state != state:
+            self.state_count = 0
+            self.state = state
+        elif self.state_count >= STATE_COUNT_THRESHOLD:
+            self.last_state = self.state
+            light_wp = light_wp if state == TrafficLight.RED else -1
+            self.last_wp = light_wp
+            self.upcoming_red_light_pub.publish(Int32(light_wp))
         else:
-            file_name = '/capstone/imgs/camera/test_{}_NOLIGHT.jpg'.format(self.state_count)
-            cv2.imwrite(file_name, cv_image)
+            self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+        self.state_count += 1
+
 
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
@@ -161,17 +166,34 @@ class TLDetector(object):
 
         """
 
-        return light.state 
+        # return light.state
         # commented out to skip TL classifier. this gets traffic light state from simulator
 
-        """if(not self.has_image):
-            self.prev_light_loc = None
-            return False
+        # if not self.has_image:
+        #     self.prev_light_loc = None
+        #     return False
+        color = False
 
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, 'bgr8')
+        start = time.time()
+        cv_image = increase_contrast(cv_image)
+        self.state_count += 1
+        lights = self.tl_extractor.extract_traffic_light(cv_image)
+        if len(lights) > 0:
+            lights_col = [self.tl_classifier.get_classification(img) for img in lights]
+            rospy.loginfo('found lights: {} in {}'.format(lights_col, time.time() - start))
+            rospy.loginfo("returning min color: {}".format(min(lights_col)))
+            color = min(lights_col)
+            if WRITE_IMAGES:
+                file_name = '/capstone/imgs/camera/test_{}_{}.jpg'.format(self.state_count, lights_col[0])
+                cv2.imwrite(file_name, lights[0])
+        else:
+            if WRITE_IMAGES:
+                file_name = '/capstone/imgs/camera/test_{}_NOLIGHT.jpg'.format(self.state_count)
+                cv2.imwrite(file_name, cv_image)
 
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
-        """
+        return color
+
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -187,14 +209,14 @@ class TLDetector(object):
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
-        
+
         car_wp_index = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
         #TODO find the closest visible traffic light (if one exists)
         diff = len(self.base_waypoints.waypoints)
         for i, light in enumerate(self.lights):
             line = stop_line_positions[i]
-            
+
             # reuse KDTtree search from waypoint update
             temp_wp_index = self.get_closest_waypoint(line[0], line[1])
             d = temp_wp_index - car_wp_index
@@ -204,6 +226,7 @@ class TLDetector(object):
                 line_wp_index = temp_wp_index
 
         if closest_light:
+            # rospy.logwarn("closest_light: {}".format(closest_light))
             state = self.get_light_state(closest_light)
             return line_wp_index, state
 
