@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 from light_classification.tl_extractor import TLExtractor
+from light_classification.tl_helpers import increase_contrast
 
 import cv2
 
@@ -124,6 +125,7 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         start = time.time()
+        cv_image = increase_contrast(cv_image)
         self.state_count += 1
         lights = self.tl_extractor.extract_traffic_light(cv_image)
         if len(lights) > 0:
