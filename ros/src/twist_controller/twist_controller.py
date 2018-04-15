@@ -8,9 +8,9 @@ from lowpass import LowPassFilter
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
-throttle_KP = 0.3
-throttle_KI = 0.1
-throttle_KD = 0.0
+throttle_KP = 10.0
+throttle_KI = 0.
+throttle_KD = 10
 
 steering_KP = 1
 steering_KI = 0.1
@@ -93,7 +93,7 @@ class Controller(object):
             throttle = 0
             brake = 400 # N*m
 
-        elif throttle < 0.1 and vel_diff < 0:
+        if throttle < 0.1 and vel_diff < 0:
             throttle = 0
             # we are decelerating
             decel = max(vel_diff, self.decel_limit)
