@@ -11,7 +11,7 @@ from twist_controller import Controller
 
 
 #: bool: if True, write select attributes to csv file.
-WRITE_CSV_LOG = True
+WRITE_CSV_LOG = False
 
 
 

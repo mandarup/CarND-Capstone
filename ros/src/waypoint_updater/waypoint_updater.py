@@ -26,7 +26,7 @@ import math
 
 
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
 
 MAX_DECEL = 1. # max. allowed deceleration
 
@@ -34,7 +34,8 @@ MAX_DECEL = 1. # max. allowed deceleration
 
 # Proposal by Udacity-walkthrough for deceleration profile:
 def deceleration_sqrt(dist):
-    x = 2 * MAX_DECEL * dist
+    # x = 2 * MAX_DECEL * dist
+    x = 0.05 * MAX_DECEL * dist
     vel = math.sqrt(x)
     return vel
 
@@ -134,7 +135,7 @@ class WaypointUpdater(object):
             p.pose = wp.pose
 
             # Deceleration profile is a sqrt function
-            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0) # Center of the car will be beind the line rather than right on
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 1, 0) # Center of the car will be beind the line rather than right on
             dist = self.distance(waypoints, i, stop_idx)
             vel = deceleration_sqrt(dist)
             # Alternative profile functions (try out later):
