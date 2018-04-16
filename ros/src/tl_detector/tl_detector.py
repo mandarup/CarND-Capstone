@@ -242,6 +242,11 @@ class TLDetector(object):
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
 
+        #ignore when pose is None
+        if self.pose is None:
+            #rospy.logwarn('self.pose is equal to None so skipping')
+            return -1, TrafficLight.UNKNOWN
+
         car_wp_index = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
         #TODO find the closest visible traffic light (if one exists)
